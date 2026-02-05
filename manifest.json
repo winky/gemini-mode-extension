@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Gemini Thinking Mode Auto-Enabler",
+  "version": "1.0.0",
+  "description": "Automatically enables Thinking Mode on Google Gemini AI chat",
+
+  "host_permissions": [
+    "https://gemini.google.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://gemini.google.com/app",
+        "https://gemini.google.com/app?*",
+        "https://gemini.google.com/app/*"
+      ],
+      "exclude_matches": [
+        "https://gemini.google.com/app/gems/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
