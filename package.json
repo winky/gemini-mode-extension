@@ -4,7 +4,7 @@
   "description": "Automatically enables Thinking Mode on Google Gemini AI chat",
   "scripts": {
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "cp manifest.json dist/ && cp -r icons dist/ && cp LICENSE dist/",
+    "copy-assets": "cp manifest.json dist/ && cp -r icons dist/ && cp LICENSE dist/ && cp src/popup.html dist/ && cp src/popup.css dist/ && cp -r _locales dist/",
     "watch": "tsc --watch",
     "clean": "rm -rf dist",
     "package": "npm run build && cd dist && zip -r ../../gemini-thinking-mode-extension.zip ."

@@ -1,0 +1,44 @@
+{
+  "extensionName": {
+    "message": "Gemini Mode Auto-Enabler"
+  },
+  "extensionDesc": {
+    "message": "Automatically enables Thinking Mode or Pro Mode on Google Gemini AI chat"
+  },
+  "popupSubtitle": {
+    "message": "Automatically sets mode for new chats"
+  },
+  "sectionLabel": {
+    "message": "Auto-enable mode"
+  },
+  "modeThinkingName": {
+    "message": "Thinking Mode"
+  },
+  "modeThinkingDesc": {
+    "message": "Thinks deeper before responding"
+  },
+  "modeProName": {
+    "message": "Pro Mode"
+  },
+  "modeProDesc": {
+    "message": "Uses the highest-performance model"
+  },
+  "modeOffName": {
+    "message": "Disabled"
+  },
+  "modeOffDesc": {
+    "message": "No automatic mode switching"
+  },
+  "statusLoading": {
+    "message": "Loading..."
+  },
+  "statusThinking": {
+    "message": "Auto-enabling Thinking Mode"
+  },
+  "statusPro": {
+    "message": "Auto-enabling Pro Mode"
+  },
+  "statusOff": {
+    "message": "Auto-switching is disabled"
+  }
+}

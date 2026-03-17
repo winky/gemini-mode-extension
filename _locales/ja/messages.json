@@ -1,0 +1,44 @@
+{
+  "extensionName": {
+    "message": "Gemini Mode Auto-Enabler"
+  },
+  "extensionDesc": {
+    "message": "Google Gemini AIチャットで思考モードまたはProモードを自動的に有効化します"
+  },
+  "popupSubtitle": {
+    "message": "新しいチャットで自動的にモードを設定"
+  },
+  "sectionLabel": {
+    "message": "自動設定するモード"
+  },
+  "modeThinkingName": {
+    "message": "思考モード"
+  },
+  "modeThinkingDesc": {
+    "message": "より深く考えてから回答します"
+  },
+  "modeProName": {
+    "message": "Pro モード"
+  },
+  "modeProDesc": {
+    "message": "最高性能のモデルを使用します"
+  },
+  "modeOffName": {
+    "message": "無効"
+  },
+  "modeOffDesc": {
+    "message": "自動切り替えをしません"
+  },
+  "statusLoading": {
+    "message": "読み込み中..."
+  },
+  "statusThinking": {
+    "message": "思考モードを自動で有効化"
+  },
+  "statusPro": {
+    "message": "Pro モードを自動で有効化"
+  },
+  "statusOff": {
+    "message": "自動切り替えは無効"
+  }
+}

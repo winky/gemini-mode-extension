@@ -1,5 +1,5 @@
 // ============================================================
-// Gemini Thinking Mode Auto-Enabler - Content Script
+// Gemini Mode Auto-Enabler - Content Script
 // Supports both English and Japanese UI
 // ============================================================
 
@@ -7,6 +7,8 @@ const DEBUG = false;
 const log = (...args: unknown[]): void => {
   if (DEBUG) console.debug('[Gemini TME]', ...args);
 };
+
+type TargetMode = 'thinking' | 'pro' | 'off';
 
 // Mode names in different languages
 const MODE_NAMES = {
@@ -22,6 +24,37 @@ const NEW_CHAT_LABELS = [
   'チャットを新規作成',
   'Start new chat',
 ] as const;
+
+const DEFAULT_MODE: TargetMode = 'thinking';
+const VALID_MODES: readonly TargetMode[] = ['thinking', 'pro', 'off'];
+
+function toTargetMode(value: unknown): TargetMode {
+  if (typeof value === 'string' && (VALID_MODES as string[]).includes(value)) {
+    return value as TargetMode;
+  }
+  return DEFAULT_MODE;
+}
+
+// Target mode loaded from storage (default: thinking)
+let targetMode: TargetMode = DEFAULT_MODE;
+
+// Load setting from storage
+chrome.storage.sync.get({ targetMode: DEFAULT_MODE }, (result) => {
+  if (chrome.runtime.lastError) {
+    log('Storage read error, using default:', chrome.runtime.lastError.message);
+    return;
+  }
+  targetMode = toTargetMode(result['targetMode']);
+  log('Target mode loaded:', targetMode);
+});
+
+// Keep in sync when popup changes the setting
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes['targetMode']) {
+    targetMode = toTargetMode(changes['targetMode'].newValue);
+    log('Target mode updated:', targetMode);
+  }
+});
 
 // Session state
 interface SessionState {
@@ -70,9 +103,11 @@ function getCurrentChatId(): string {
   return url.searchParams.get('chat') || 'new_chat';
 }
 
-// ---- Check if current mode is Thinking Mode ----
-function isThinkingMode(modeText: string): boolean {
-  return matchesAny(modeText, MODE_NAMES.thinking);
+// ---- Check if current mode matches the target ----
+function isTargetModeSelected(modeText: string, mode: TargetMode): boolean {
+  if (mode === 'thinking') return matchesAny(modeText, MODE_NAMES.thinking);
+  if (mode === 'pro') return matchesAny(modeText, MODE_NAMES.pro);
+  return false;
 }
 
 // ---- Check if text is a known mode name ----
@@ -113,8 +148,10 @@ function findModeDropdownButton(): DropdownInfo | null {
   return null;
 }
 
-// ---- Find "Thinking Mode" option in dropdown menu ----
-function findThinkingModeOption(): Element | null {
+// ---- Find target mode option in dropdown menu ----
+function findModeOption(mode: TargetMode): Element | null {
+  const modePatterns = mode === 'thinking' ? MODE_NAMES.thinking : MODE_NAMES.pro;
+
   // Look for menu items (role="menuitem" or role="option")
   const menuItems = document.querySelectorAll(
     '[role="menuitem"], [role="option"], [role="menuitemradio"], mat-option, .mat-mdc-option'
@@ -122,25 +159,24 @@ function findThinkingModeOption(): Element | null {
 
   for (const item of menuItems) {
     const text = item.textContent?.trim() || '';
-    if (containsAny(text, MODE_NAMES.thinking)) {
-      log('Thinking mode option found');
+    if (containsAny(text, modePatterns)) {
+      log('Mode option found:', mode);
       return item;
     }
   }
 
-  // Fallback: any clickable element containing thinking mode text
+  // Fallback: any clickable element containing the mode text
   const allElements = document.querySelectorAll('*');
   for (const el of allElements) {
     const text = el.textContent?.trim() || '';
-    // Element with direct child text starting with thinking mode name
-    if (matchesAny(text, MODE_NAMES.thinking) && el.children.length <= 2) {
+    if (matchesAny(text, modePatterns) && el.children.length <= 2) {
       const style = window.getComputedStyle(el);
       if (
         style.cursor === 'pointer' ||
         (el as HTMLElement).onclick ||
         el.hasAttribute('tabindex')
       ) {
-        log('Thinking mode option found (fallback)');
+        log('Mode option found (fallback):', mode);
         return el;
       }
     }
@@ -173,8 +209,12 @@ function clickElement(element: Element): boolean {
 }
 
 // ---- Main enable logic ----
-function attemptEnableThinkingMode(): void {
+function attemptEnableTargetMode(): void {
   if (isExcludedPage()) return;
+  if (targetMode === 'off') {
+    log('Auto-select is disabled (off)');
+    return;
+  }
 
   const chatId = getCurrentChatId();
   if (chatId !== state.lastChatId) {
@@ -200,7 +240,7 @@ function startModeSelection(): void {
   state.attemptCount = 0;
 
   // Immediate check
-  if (trySelectThinkingMode()) return;
+  if (trySelectTargetMode()) return;
 
   // Watch for dynamic content with MutationObserver
   state.buttonObserver = new MutationObserver(() => {
@@ -210,7 +250,7 @@ function startModeSelection(): void {
       state.buttonObserver?.disconnect();
       return;
     }
-    trySelectThinkingMode();
+    trySelectTargetMode();
   });
 
   state.buttonObserver.observe(document.body, {
@@ -225,7 +265,9 @@ function startModeSelection(): void {
   }, 15000);
 }
 
-function trySelectThinkingMode(): boolean {
+function trySelectTargetMode(): boolean {
+  if (targetMode === 'off') return true;
+
   // Step 1: Find dropdown button
   const dropdownInfo = findModeDropdownButton();
   if (!dropdownInfo) {
@@ -233,47 +275,47 @@ function trySelectThinkingMode(): boolean {
     return false;
   }
 
-  // Skip if thinking mode is already selected
-  if (isThinkingMode(dropdownInfo.currentMode)) {
-    log('Thinking mode already selected');
+  // Skip if target mode is already selected
+  if (isTargetModeSelected(dropdownInfo.currentMode, targetMode)) {
+    log('Target mode already selected:', targetMode);
     state.hasTriggered = true;
     state.buttonObserver?.disconnect();
     return true;
   }
 
-  log('Current mode:', dropdownInfo.currentMode, '-> switching to Thinking Mode');
+  log('Current mode:', dropdownInfo.currentMode, '-> switching to:', targetMode);
 
   // Step 2: Open dropdown
   clickElement(dropdownInfo.button);
 
-  // Step 3: Wait for menu to open, then click "Thinking Mode"
+  // Step 3: Wait for menu to open, then click target mode
   setTimeout(() => {
-    selectThinkingModeFromMenu();
+    selectModeFromMenu(targetMode);
   }, 300);
 
   return true;
 }
 
-function selectThinkingModeFromMenu(): void {
-  const option = findThinkingModeOption();
+function selectModeFromMenu(mode: TargetMode): void {
+  const option = findModeOption(mode);
   if (option) {
-    log('Clicking thinking mode option');
+    log('Clicking mode option:', mode);
     clickElement(option);
     state.hasTriggered = true;
     state.buttonObserver?.disconnect();
-    log('Thinking mode enabled successfully!');
+    log('Mode enabled successfully:', mode);
   } else {
-    log('Thinking mode option not found, retrying...');
+    log('Mode option not found, retrying...');
     // Retry
     setTimeout(() => {
-      const retryOption = findThinkingModeOption();
+      const retryOption = findModeOption(mode);
       if (retryOption) {
         clickElement(retryOption);
         state.hasTriggered = true;
         state.buttonObserver?.disconnect();
-        log('Thinking mode enabled successfully! (retry)');
+        log('Mode enabled successfully (retry):', mode);
       } else {
-        log('Thinking mode option not found, giving up');
+        log('Mode option not found, giving up');
         // Press Escape to close menu
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       }
@@ -291,24 +333,24 @@ function setupNavigationDetection(): void {
 
   history.pushState = function (...args: Parameters<typeof originalPushState>) {
     originalPushState.apply(this, args);
-    setTimeout(attemptEnableThinkingMode, 500);
+    setTimeout(attemptEnableTargetMode, 500);
   };
 
   history.replaceState = function (...args: Parameters<typeof originalReplaceState>) {
     originalReplaceState.apply(this, args);
-    setTimeout(attemptEnableThinkingMode, 500);
+    setTimeout(attemptEnableTargetMode, 500);
   };
 
   // popstate
   window.addEventListener('popstate', () => {
-    setTimeout(attemptEnableThinkingMode, 500);
+    setTimeout(attemptEnableTargetMode, 500);
   });
 
   // URL polling (fallback)
   setInterval(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
-      attemptEnableThinkingMode();
+      attemptEnableTargetMode();
     }
   }, 1000);
 }
@@ -320,13 +362,13 @@ function setupNewChatListener(): void {
     for (const btn of buttons) {
       const text = btn.textContent?.trim() || '';
       const htmlBtn = btn as HTMLElement;
-      if (containsAny(text, NEW_CHAT_LABELS) && !htmlBtn.dataset.geminiTmeListenerAttached) {
-        htmlBtn.dataset.geminiTmeListenerAttached = 'true';
+      if (containsAny(text, NEW_CHAT_LABELS) && !htmlBtn.dataset['geminiTmeListenerAttached']) {
+        htmlBtn.dataset['geminiTmeListenerAttached'] = 'true';
         btn.addEventListener('click', () => {
           log('New chat button clicked');
           state.hasTriggered = false;
           state.lastChatId = null;
-          setTimeout(attemptEnableThinkingMode, 1000);
+          setTimeout(attemptEnableTargetMode, 1000);
         });
         log('Listener attached to new chat button');
       }
@@ -350,10 +392,10 @@ function init(): void {
 
   // Initial attempt
   if (document.readyState === 'complete') {
-    setTimeout(attemptEnableThinkingMode, 1000);
+    setTimeout(attemptEnableTargetMode, 1000);
   } else {
     window.addEventListener('load', () => {
-      setTimeout(attemptEnableThinkingMode, 1500);
+      setTimeout(attemptEnableTargetMode, 1500);
     });
   }
 }

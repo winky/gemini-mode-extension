@@ -6,6 +6,8 @@
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log('[Gemini TME] Extension installed');
+    // Set default mode to 'thinking' on first install
+    chrome.storage.sync.set({ targetMode: 'thinking' });
   } else if (details.reason === 'update') {
     console.log('[Gemini TME] Extension updated - version:', chrome.runtime.getManifest().version);
   }
