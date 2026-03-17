@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gemini Mode Auto-Enabler</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="header">
+    <img class="header-icon" src="icons/icon48.png" alt="icon" onerror="this.style.display='none'" />
+    <div>
+      <div class="header-title">Gemini Mode Auto-Enabler</div>
+      <div class="header-subtitle" data-i18n="popupSubtitle">新しいチャットで自動的にモードを設定</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label" data-i18n="sectionLabel">自動設定するモード</div>
+    <div class="mode-list" id="modeList">
+
+      <label class="mode-option" data-value="thinking">
+        <input type="radio" name="mode" value="thinking" />
+        <div class="mode-radio"></div>
+        <div class="mode-info">
+          <div class="mode-name">
+            <span data-i18n="modeThinkingName">思考モード</span>
+            <span class="mode-badge badge-thinking">Thinking</span>
+          </div>
+          <div class="mode-desc" data-i18n="modeThinkingDesc">より深く考えてから回答します</div>
+        </div>
+      </label>
+
+      <label class="mode-option" data-value="pro">
+        <input type="radio" name="mode" value="pro" />
+        <div class="mode-radio"></div>
+        <div class="mode-info">
+          <div class="mode-name">
+            <span data-i18n="modeProName">Pro モード</span>
+            <span class="mode-badge badge-pro">Pro</span>
+          </div>
+          <div class="mode-desc" data-i18n="modeProDesc">最高性能のモデルを使用します</div>
+        </div>
+      </label>
+
+      <label class="mode-option" data-value="off">
+        <input type="radio" name="mode" value="off" />
+        <div class="mode-radio"></div>
+        <div class="mode-info">
+          <div class="mode-name" data-i18n="modeOffName">無効</div>
+          <div class="mode-desc" data-i18n="modeOffDesc">自動切り替えをしません</div>
+        </div>
+      </label>
+
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-text" id="statusText" data-i18n="statusLoading">読み込み中...</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
