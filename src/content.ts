@@ -25,19 +25,33 @@ const NEW_CHAT_LABELS = [
   'Start new chat',
 ] as const;
 
+const DEFAULT_MODE: TargetMode = 'thinking';
+const VALID_MODES: readonly TargetMode[] = ['thinking', 'pro', 'off'];
+
+function toTargetMode(value: unknown): TargetMode {
+  if (typeof value === 'string' && (VALID_MODES as string[]).includes(value)) {
+    return value as TargetMode;
+  }
+  return DEFAULT_MODE;
+}
+
 // Target mode loaded from storage (default: thinking)
-let targetMode: TargetMode = 'thinking';
+let targetMode: TargetMode = DEFAULT_MODE;
 
 // Load setting from storage
-chrome.storage.sync.get({ targetMode: 'thinking' }, (result) => {
-  targetMode = result['targetMode'] as TargetMode;
+chrome.storage.sync.get({ targetMode: DEFAULT_MODE }, (result) => {
+  if (chrome.runtime.lastError) {
+    log('Storage read error, using default:', chrome.runtime.lastError.message);
+    return;
+  }
+  targetMode = toTargetMode(result['targetMode']);
   log('Target mode loaded:', targetMode);
 });
 
 // Keep in sync when popup changes the setting
 chrome.storage.onChanged.addListener((changes) => {
   if (changes['targetMode']) {
-    targetMode = changes['targetMode'].newValue as TargetMode;
+    targetMode = toTargetMode(changes['targetMode'].newValue);
     log('Target mode updated:', targetMode);
   }
 });
